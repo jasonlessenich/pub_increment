@@ -1,2 +1,2 @@
-A sample command-line application with an entrypoint in `bin/`, library code
-in `lib/`, and example unit test in `test/`.
+# pub_increment
+Command-line tool that allows to increment the version number in a pubspec.yaml file
