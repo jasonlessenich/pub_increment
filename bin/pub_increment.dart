@@ -40,11 +40,7 @@ class Version {
   }
 
   Version increment(IncrementType type, {bool incrementBuild = true}) {
-    Version version = Version(
-        major: major,
-        minor: minor,
-        patch: patch,
-        build: incrementBuild ? (build + 1) : 0);
+    Version version = Version(major: major, minor: minor, patch: patch, build: incrementBuild ? (build + 1) : 0);
     if (type == IncrementType.major) {
       version = version.copyWith(major: major + 1, minor: 0, patch: 0);
     } else if (type == IncrementType.minor) {
@@ -87,5 +83,5 @@ void main(List<String> arguments) {
           .increment(type, incrementBuild: !incrementBuild);
   editor.update(['version'], version.toString());
   pubspecFile.writeAsStringSync(editor.toString());
-  print('Incremented version to ${version.toString()}');
+  print('Incremented version to ${version.toString()} (was ${currentVersion?.toString() ?? '0.0.0'})');
 }

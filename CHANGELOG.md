@@ -1,3 +1,6 @@
+## 1.0.3
+- Improved logging
+
 ## 1.0.2
 - Always increment build number
 - Added `no-build-increment` flag to prevent incrementing the build number
