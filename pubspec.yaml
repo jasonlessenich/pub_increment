@@ -1,6 +1,6 @@
 name: pub_increment
 description: Command-line tool to increment the version number in a pubspec.yaml file.
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: ^3.3.2

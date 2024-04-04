@@ -7,20 +7,36 @@ class Version {
   final int major;
   final int minor;
   final int patch;
+  final int? build;
 
-  Version(this.major, this.minor, this.patch);
+  Version({required this.major, required this.minor, required this.patch, this.build});
 
-  factory Version.parse(String version) {
+  static Version? tryParse(String version) {
     final List<String> parts = version.split('.');
-    return Version(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    if (parts.length < 3) {
+      return null;
+    }
+    final List<String> patchParts = parts[2].split('+');
+    int? build;
+    if (patchParts.length > 1) {
+      build = int.tryParse(patchParts[1]);
+    }
+    return Version(
+        major: int.tryParse(parts[0]) ?? 0,
+        minor: int.tryParse(parts[1]) ?? 0,
+        patch: int.tryParse(patchParts[0]) ?? 0,
+        build: build);
   }
 
-  Version incrementMajor() => Version(major + 1, 0, 0);
-  Version incrementMinor() => Version(major, minor + 1, 0);
-  Version incrementPatch() => Version(major, minor, patch + 1);
+  Version incrementMajor(bool incrementBuild) =>
+      Version(major: major + 1, minor: 0, patch: 0, build: incrementBuild ? (build ?? 0) + 1 : null);
+  Version incrementMinor(bool incrementBuild) =>
+      Version(major: major, minor: minor + 1, patch: 0, build: incrementBuild ? (build ?? 0) + 1 : null);
+  Version incrementPatch(bool incrementBuild) =>
+      Version(major: major, minor: minor, patch: patch + 1, build: incrementBuild ? (build ?? 0) + 1 : null);
 
   @override
-  String toString() => '$major.$minor.$patch';
+  String toString() => '$major.$minor.$patch${build != null ? '+$build' : ''}';
 }
 
 enum IncrementType { major, minor, patch }
@@ -29,22 +45,24 @@ final ArgParser args = ArgParser()
   ..addOption('path', abbr: 'p', help: 'Path to pubspec.yaml file', defaultsTo: 'pubspec.yaml')
   ..addOption('type',
       abbr: 't',
-      help: 'The type of version to increment (major, minor, patch)',
+      help: 'The type of version to increment (major, minor, patch, build)',
       defaultsTo: 'patch',
-      allowed: ['major', 'minor', 'patch']);
+      allowed: ['major', 'minor', 'patch'])
+  ..addFlag('build', abbr: 'b', help: 'Increment build number', defaultsTo: false);
 
 void main(List<String> arguments) {
   final ArgResults results = args.parse(arguments);
   final IncrementType type =
       IncrementType.values.firstWhere((t) => t.name == results['type'], orElse: () => IncrementType.patch);
+  final bool incrementBuild = results['build'];
 
   final File pubspecFile = File(results['path']);
   final YamlEditor editor = YamlEditor(pubspecFile.readAsStringSync());
-  Version version = Version.parse(editor.parseAt(['version']).value as String);
+  Version version = Version.tryParse(editor.parseAt(['version']).value as String) ?? Version(major: 0, minor: 0, patch: 0);
   version = switch (type) {
-    IncrementType.major => version.incrementMajor(),
-    IncrementType.minor => version.incrementMinor(),
-    IncrementType.patch => version.incrementPatch()
+    IncrementType.major => version.incrementMajor(incrementBuild),
+    IncrementType.minor => version.incrementMinor(incrementBuild),
+    IncrementType.patch => version.incrementPatch(incrementBuild)
   };
   editor.update(['version'], version.toString());
   pubspecFile.writeAsStringSync(editor.toString());
